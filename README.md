@@ -52,9 +52,15 @@ Fill the `org.sixdouglas.formation.spring.irrigation.DripIrrigation.followDrops`
 
 Then complete the `org.sixdouglas.formation.spring.irrigation.DripIrrigation.followDropper` and `org.sixdouglas.formation.spring.irrigation.producer.GreenHouseProducer.getDrops` functions to make the associated Unit Test runs successfully.
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6885a17 (:sparkles: Step 3)
 
 #### Step 3
 
 Next complete the `org.sixdouglas.formation.spring.irrigation.DripIrrigation.followDetailedDropper`, `org.sixdouglas.formation.spring.irrigation.DripIrrigation.getDetailedDrop` functions to make the associated Unit Test runs successfully.
+<<<<<<< HEAD
 =======
 >>>>>>> 95577cc (:sparkles: Step 2)
+=======
+>>>>>>> 6885a17 (:sparkles: Step 3)
