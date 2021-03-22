@@ -66,4 +66,52 @@ class DripIrrigationTest {
             .expectComplete()
             .verify();
     }
+
+    @Test
+    void followDropper() {
+        Flux<Drop> dropFlux = dripIrrigation
+            .followDropper(2, 1, 6)
+            .take(8)
+            .timeout(Duration.ofMillis(200));
+
+        StepVerifier.create(dropFlux)
+            .assertNext(drop -> {
+                assertEquals(
+                    2,
+                    drop.greenHouseId(),
+                    "Greenhouse ID should be 2"
+                );
+                assertEquals(1, drop.rowId(), "Row ID should be 1");
+                assertEquals(6, drop.dropperId(), "Dropper ID should be 6");
+                assertNotNull(
+                    drop.uuid(),
+                    "Drop UUID should looks like '01234567-9ABC-DEF0-1234-56789ABCDEF0'"
+                );
+                assertNotNull(drop.instant(), "Instant should not be null");
+                Instant nowInstant = Instant.now();
+                assertTrue(
+                    nowInstant.isAfter(drop.instant()),
+                    "Instant should be before now"
+                );
+                Instant truncatedNowInstant = nowInstant.truncatedTo(
+                    ChronoUnit.MILLIS
+                );
+                assertTrue(
+                    truncatedNowInstant.toEpochMilli() -
+                            drop
+                                .instant()
+                                .truncatedTo(ChronoUnit.MILLIS)
+                                .toEpochMilli() <=
+                        300,
+                    "Instant [" +
+                        drop.instant().truncatedTo(ChronoUnit.MILLIS) +
+                        "] should be less than 300 milli-seconds appart from now [" +
+                        truncatedNowInstant +
+                        "]"
+                );
+            })
+            .expectNextCount(7)
+            .expectComplete()
+            .verify();
+    }
 }
