@@ -9,9 +9,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.logging.Level;
 
 public final class GreenHouseProducer {
     private static final List<GreenHouse> greenHouses = List.of(GreenHouse.builder()
@@ -76,15 +76,22 @@ public final class GreenHouseProducer {
 
 
     public static Flux<Drop> getDrops() {
-        Flux<Drop> dropsFlux = Flux.empty();
+        List<Flux<Drop>> fluxes = new ArrayList<>();
 
-        //TODO go through all Greenhouses
-        //TODO    go through all Row
-        //TODO       go through all Dropper
-        //TODO          Create a flux that will emit a Drop every 10 millis seconds using the buildDrop() function
-        //TODO          then merge this new flux int the dropsFlux
+        greenHouses.forEach(greenHouse -> {
+            greenHouse.getRows().forEach(row -> {
+                row.getDroppers().forEach(dropper -> {
+                    Flux<Drop> map = Flux.interval(Duration.ofMillis(10))
+                            .log(null, Level.FINE)
+                            .onBackpressureDrop()
+                            .map(i -> Drop.builder().greenHouseId(greenHouse.getId()).rowId(row.getId()).dropperId(dropper.getId()).broken(false)
+                                    .instant(Instant.now()).build());
+                    fluxes.add(map);
+                });
+            });
+        });
 
-        return dropsFlux;
+        return Flux.merge(fluxes);
     }
 
     private static Mono<Drop> buildDrop(GreenHouse greenHouse, Row row, Dropper dropper) {

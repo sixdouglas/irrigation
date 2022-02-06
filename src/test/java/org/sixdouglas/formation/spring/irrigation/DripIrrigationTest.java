@@ -1,18 +1,18 @@
 package org.sixdouglas.formation.spring.irrigation;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
+import reactor.test.scheduler.VirtualTimeScheduler;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DripIrrigationTest {
 
     private DripIrrigation dripIrrigation;
@@ -20,17 +20,24 @@ class DripIrrigationTest {
 
     @BeforeEach
     public void setup() {
-        dripIrrigation = new DripIrrigation();
+         dripIrrigation = new DripIrrigation();
     }
 
     @Test
+    @Order(1)
     void testFollowDrops() {
+
 
         Flux<Drop> dropFlux = dripIrrigation.followDrops()
                 .limitRequest(5)
-                .timeout(Duration.ofMillis(105));
+                .timeout(Duration.ofMillis(600));
 
-        StepVerifier.create(dropFlux).assertNext(drop -> {
+
+        VirtualTimeScheduler virtualTimeScheduler = VirtualTimeScheduler.create();
+
+        StepVerifier.withVirtualTime(() -> dropFlux, () -> virtualTimeScheduler, 5)
+                .thenAwait(Duration.ofMillis(10000))
+                .assertNext(drop -> {
             assertEquals(1, drop.getGreenHouseId(), "Greenhouse ID should be 1");
             assertEquals(1, drop.getRowId(), "Row ID should be 1");
             assertEquals(1, drop.getDropperId(), "Dropper ID should be 1");
@@ -42,19 +49,23 @@ class DripIrrigationTest {
             assertTrue(truncatedNowInstant.toEpochMilli() - drop.getInstant().truncatedTo(ChronoUnit.MILLIS).toEpochMilli() <= 300, "Instant [" + drop.getInstant().truncatedTo(ChronoUnit.MILLIS) + "] should be less than 300 milli-seconds appart from now [" + truncatedNowInstant + "]");
         })
                 .expectNextCount(4)
-                .expectComplete()
-                .verify();
-
+                .verifyComplete();
     }
 
     @Test
+    @Order(2)
     void followDropper() {
 
         Flux<Drop> dropFlux = dripIrrigation.followDropper(2, 1, 6)
                 .limitRequest(8)
-                .timeout(Duration.ofMillis(200));
+                .timeout(Duration.ofMillis(400));
 
-        StepVerifier.create(dropFlux).assertNext(drop -> {
+
+        VirtualTimeScheduler virtualTimeScheduler = VirtualTimeScheduler.create();
+
+        StepVerifier.withVirtualTime(() -> dropFlux, () -> virtualTimeScheduler, 8)
+                .thenAwait(Duration.ofMillis(10000))
+                .assertNext(drop -> {
             assertEquals(2, drop.getGreenHouseId(), "Greenhouse ID should be 2");
             assertEquals(1, drop.getRowId(), "Row ID should be 1");
             assertEquals(6, drop.getDropperId(), "Dropper ID should be 6");
@@ -66,7 +77,7 @@ class DripIrrigationTest {
             assertTrue(truncatedNowInstant.toEpochMilli() - drop.getInstant().truncatedTo(ChronoUnit.MILLIS).toEpochMilli() <= 300, "Instant [" + drop.getInstant().truncatedTo(ChronoUnit.MILLIS) + "] should be less than 300 milli-seconds appart from now [" + truncatedNowInstant + "]");
         })
                 .expectNextCount(7)
-                .expectComplete()
-                .verify();
+                .verifyComplete();
     }
+
 }

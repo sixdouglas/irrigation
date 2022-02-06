@@ -6,17 +6,22 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.logging.Level;
+
 @Component
 public class DripIrrigation {
     private static Logger LOGGER = LoggerFactory.getLogger(DripIrrigation.class);
 
     public Flux<Drop> followDrops() {
-        //TODO Create a Flux that would emit a Drop every 20 millis seconds
-        return null;
+        return Flux.interval(Duration.ofMillis(20))
+                .log(null, Level.FINE)
+                .map(i -> new Drop(1, 1, 1, false, Instant.now()));
     }
 
     public Flux<Drop> followDropper(int greenHouseId, int rowId, int dropperId) {
-        //TODO use the GreenHouseProducer.getDrops() function as producer, but filter the output to fit the given criteria
-        return null;
+        Flux<Drop> drops = GreenHouseProducer.getDrops();
+        return drops.log().filter(drop -> drop.getGreenHouseId() == greenHouseId && drop.getRowId() == rowId && drop.getDropperId() == dropperId);
     }
 }
